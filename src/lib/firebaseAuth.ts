@@ -1,8 +1,12 @@
-import { 
-  signInWithPopup, 
-  GoogleAuthProvider, 
+import {
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut as firebaseSignOut,
   onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  updateProfile,
   User
 } from "firebase/auth";
 import { auth } from "./firebase";
@@ -46,6 +50,56 @@ export const signInWithGoogle = async () => {
     
     console.error("Error signing in with Google:", errorCode, errorMessage);
     return { user: null, token: null, error: errorMessage };
+  }
+};
+
+/**
+ * Sign in with email and password using Firebase Authentication
+ */
+export const signInWithEmail = async (email: string, password: string) => {
+  try {
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    return { user: credential.user, error: null };
+  } catch (error: any) {
+    console.error("Error signing in with email:", error?.message || error);
+    return { user: null, error: error?.message || "Failed to sign in" };
+  }
+};
+
+/**
+ * Register with email and password using Firebase Authentication
+ */
+export const registerWithEmail = async (
+  email: string,
+  password: string,
+  displayName?: string
+) => {
+  try {
+    const credential = await createUserWithEmailAndPassword(auth, email, password);
+    if (displayName) {
+      try {
+        await updateProfile(credential.user, { displayName });
+      } catch (profileError) {
+        console.warn("Profile update failed:", profileError);
+      }
+    }
+    return { user: credential.user, error: null };
+  } catch (error: any) {
+    console.error("Error registering with email:", error?.message || error);
+    return { user: null, error: error?.message || "Failed to register" };
+  }
+};
+
+/**
+ * Send password reset email
+ */
+export const sendResetEmail = async (email: string) => {
+  try {
+    await sendPasswordResetEmail(auth, email);
+    return { error: null };
+  } catch (error: any) {
+    console.error("Error sending reset email:", error?.message || error);
+    return { error: error?.message || "Failed to send reset email" };
   }
 };
 
