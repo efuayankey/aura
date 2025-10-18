@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import InputForm from '@/components/InputForm'
 import BalanceScore from '@/components/BalanceScore'
@@ -9,18 +8,34 @@ import { UserInput, ScheduleItem, BalanceScore as BalanceScoreType } from '@/typ
 import { AIScheduler } from '@/lib/aiScheduler'
 import { BalanceCalculator } from '@/lib/balanceScore'
 import { Check, CheckCircle2, Circle, Clock, LogOut } from 'lucide-react'
+import { onAuthStateChange, signOut as firebaseSignOut, getCurrentUser } from '@/lib/firebaseAuth'
+import { User } from 'firebase/auth'
 
 export default function Home() {
-  const { data: session, status } = useSession()
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-    }
-  }, [status, router])
+    // Subscribe to auth state changes
+    const unsubscribe = onAuthStateChange((currentUser) => {
+      setUser(currentUser)
+      setLoading(false)
+      if (!currentUser) {
+        router.push('/login')
+      }
+    })
 
-  if (status === 'loading') {
+    // Cleanup subscription on unmount
+    return () => unsubscribe()
+  }, [router])
+
+  const handleSignOut = async () => {
+    await firebaseSignOut()
+    router.push('/login')
+  }
+
+  if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center p-8">
         <div className="text-center">
@@ -33,7 +48,7 @@ export default function Home() {
     )
   }
 
-  if (!session) {
+  if (!user) {
     return null
   }
   const [currentStep, setCurrentStep] = useState<'input' | 'dashboard'>('input')
@@ -156,10 +171,10 @@ export default function Home() {
           <div className="absolute top-4 right-4 flex items-center gap-4">
             <div className="text-right">
               <p className="text-sm text-gray-600">Welcome,</p>
-              <p className="text-sm font-semibold text-gray-800">{session.user?.name}</p>
+              <p className="text-sm font-semibold text-gray-800">{user.displayName || user.email}</p>
             </div>
             <button
-              onClick={() => signOut({ callbackUrl: '/login' })}
+              onClick={handleSignOut}
               className="p-2 rounded-lg bg-white hover:bg-gray-100 border border-gray-200 transition-all"
               title="Sign out"
             >
@@ -188,10 +203,10 @@ export default function Home() {
         <div className="flex justify-end items-center gap-4 mb-6">
           <div className="text-right">
             <p className="text-sm text-gray-600">Welcome,</p>
-            <p className="text-sm font-semibold text-gray-800">{session.user?.name}</p>
+            <p className="text-sm font-semibold text-gray-800">{user.displayName || user.email}</p>
           </div>
           <button
-            onClick={() => signOut({ callbackUrl: '/login' })}
+            onClick={handleSignOut}
             className="p-2 rounded-lg bg-white hover:bg-gray-100 border border-gray-200 transition-all"
             title="Sign out"
           >

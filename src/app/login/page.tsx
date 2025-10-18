@@ -1,28 +1,46 @@
 'use client'
 
-import { signIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { signInWithGoogle, onAuthStateChange } from '@/lib/firebaseAuth'
+import { User } from 'firebase/auth'
 
 export default function LoginPage() {
-  const { data: session, status } = useSession()
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
-    if (session) {
-      router.push('/')
-    }
-  }, [session, router])
+    // Subscribe to auth state changes
+    const unsubscribe = onAuthStateChange((currentUser) => {
+      setUser(currentUser)
+      setLoading(false)
+      if (currentUser) {
+        router.push('/')
+      }
+    })
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe()
+  }, [router])
 
   const handleGoogleSignIn = async () => {
-    await signIn('google', { 
-      callbackUrl: '/',
-      // Request access to Google Calendar
-      scope: 'openid email profile https://www.googleapis.com/auth/calendar.readonly'
-    })
+    setError(null)
+    setLoading(true)
+    
+    const { user: signedInUser, error: signInError } = await signInWithGoogle()
+    
+    if (signInError) {
+      setError(signInError)
+      setLoading(false)
+    } else if (signedInUser) {
+      // User will be redirected by the onAuthStateChange listener
+      setUser(signedInUser)
+    }
   }
 
-  if (status === 'loading') {
+  if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center p-8">
         <div className="text-center">
@@ -54,6 +72,15 @@ export default function LoginPage() {
         {/* Login Card */}
         <div className="glass rounded-3xl p-8 shadow-xl">
           <div className="space-y-6">
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <p className="text-sm text-red-700">
+                  ⚠️ {error}
+                </p>
+              </div>
+            )}
+
             {/* Info Box */}
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
               <h3 className="text-sm font-semibold text-blue-900 mb-2">
@@ -74,7 +101,8 @@ export default function LoginPage() {
             {/* Google Sign In Button */}
             <button
               onClick={handleGoogleSignIn}
-              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 text-gray-700 font-semibold py-4 px-6 rounded-xl border-2 border-gray-200 hover:border-gray-300 transition-all duration-200 shadow-md hover:shadow-lg group"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 text-gray-700 font-semibold py-4 px-6 rounded-xl border-2 border-gray-200 hover:border-gray-300 transition-all duration-200 shadow-md hover:shadow-lg group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg className="w-6 h-6" viewBox="0 0 24 24">
                 <path
