@@ -1,14 +1,41 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSession, signOut } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import InputForm from '@/components/InputForm'
 import BalanceScore from '@/components/BalanceScore'
 import { UserInput, ScheduleItem, BalanceScore as BalanceScoreType } from '@/types'
 import { AIScheduler } from '@/lib/aiScheduler'
 import { BalanceCalculator } from '@/lib/balanceScore'
-import { Check, CheckCircle2, Circle, Clock } from 'lucide-react'
+import { Check, CheckCircle2, Circle, Clock, LogOut } from 'lucide-react'
 
 export default function Home() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login')
+    }
+  }, [status, router])
+
+  if (status === 'loading') {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-pulse-gentle mb-6">
+            <div className="w-16 h-16 bg-gradient-to-r from-serenity-500 to-mindful-500 rounded-full mx-auto"></div>
+          </div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (!session) {
+    return null
+  }
   const [currentStep, setCurrentStep] = useState<'input' | 'dashboard'>('input')
   const [userInput, setUserInput] = useState<UserInput | null>(null)
   const [schedule, setSchedule] = useState<ScheduleItem[]>([])
@@ -125,6 +152,21 @@ export default function Home() {
     return (
       <main className="min-h-screen flex items-center justify-center p-8">
         <div className="w-full">
+          {/* Header with user info and logout */}
+          <div className="absolute top-4 right-4 flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm text-gray-600">Welcome,</p>
+              <p className="text-sm font-semibold text-gray-800">{session.user?.name}</p>
+            </div>
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="p-2 rounded-lg bg-white hover:bg-gray-100 border border-gray-200 transition-all"
+              title="Sign out"
+            >
+              <LogOut className="w-4 h-4 text-gray-600" />
+            </button>
+          </div>
+
           <div className="text-center mb-8 animate-fade-in">
             <h1 className="text-6xl font-bold bg-gradient-to-r from-serenity-600 via-mindful-600 to-balance-600 bg-clip-text text-transparent mb-4">
               AURA
@@ -142,6 +184,21 @@ export default function Home() {
   return (
     <main className="min-h-screen p-8">
       <div className="max-w-6xl mx-auto">
+        {/* Header with user info and logout */}
+        <div className="flex justify-end items-center gap-4 mb-6">
+          <div className="text-right">
+            <p className="text-sm text-gray-600">Welcome,</p>
+            <p className="text-sm font-semibold text-gray-800">{session.user?.name}</p>
+          </div>
+          <button
+            onClick={() => signOut({ callbackUrl: '/login' })}
+            className="p-2 rounded-lg bg-white hover:bg-gray-100 border border-gray-200 transition-all"
+            title="Sign out"
+          >
+            <LogOut className="w-4 h-4 text-gray-600" />
+          </button>
+        </div>
+
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-serenity-600 via-mindful-600 to-balance-600 bg-clip-text text-transparent mb-2">
             Your Perfect Day
