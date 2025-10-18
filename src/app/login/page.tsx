@@ -2,13 +2,17 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { signInWithGoogle, onAuthStateChange } from '@/lib/firebaseAuth'
+import { signInWithGoogle, signInWithEmail, registerWithEmail, sendResetEmail, onAuthStateChange } from '@/lib/firebaseAuth'
 import { User } from 'firebase/auth'
 
 export default function LoginPage() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isRegister, setIsRegister] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -17,7 +21,7 @@ export default function LoginPage() {
       setUser(currentUser)
       setLoading(false)
       if (currentUser) {
-        router.push('/')
+        router.push('/home')
       }
     })
 
@@ -38,6 +42,44 @@ export default function LoginPage() {
       // User will be redirected by the onAuthStateChange listener
       setUser(signedInUser)
     }
+  }
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+    try {
+      if (isRegister) {
+        const { user: registered, error: registerError } = await registerWithEmail(email, password, displayName)
+        if (registerError) {
+          setError(registerError)
+        } else if (registered) {
+          setUser(registered)
+        }
+      } else {
+        const { user: signedIn, error: emailError } = await signInWithEmail(email, password)
+        if (emailError) {
+          setError(emailError)
+        } else if (signedIn) {
+          setUser(signedIn)
+        }
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      setError('Enter your email to reset password')
+      return
+    }
+    setError(null)
+    setLoading(true)
+    const { error: resetError } = await sendResetEmail(email)
+    setLoading(false)
+    if (resetError) setError(resetError)
+    else alert('Password reset email sent')
   }
 
   if (loading) {
@@ -96,6 +138,64 @@ export default function LoginPage() {
                   <span>Your Google Calendar (read-only)</span>
                 </li>
               </ul>
+            </div>
+
+            {/* Email Sign In / Register */}
+            <form onSubmit={handleEmailSubmit} className="space-y-3">
+              {isRegister && (
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Display name"
+                  className="w-full bg-white/70 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-mindful-400"
+                />
+              )}
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+                className="w-full bg-white/70 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-mindful-400"
+                required
+              />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                className="w-full bg-white/70 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-mindful-400"
+                required
+              />
+              <div className="flex items-center justify-between">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 mr-2 bg-mindful-600 hover:bg-mindful-700 text-white font-semibold py-3 rounded-xl shadow-md hover:shadow-lg disabled:opacity-50"
+                >
+                  {isRegister ? 'Create account' : 'Sign in'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsRegister(!isRegister)}
+                  className="ml-2 text-sm text-gray-600 hover:text-gray-800"
+                >
+                  {isRegister ? 'Have an account? Sign in' : "New here? Create account"}
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={handleResetPassword}
+                className="w-full text-sm text-serenity-700 hover:text-serenity-900"
+              >
+                Forgot password?
+              </button>
+            </form>
+
+            <div className="flex items-center gap-3">
+              <div className="h-px bg-gray-200 flex-1" />
+              <span className="text-xs text-gray-400">or</span>
+              <div className="h-px bg-gray-200 flex-1" />
             </div>
 
             {/* Google Sign In Button */}

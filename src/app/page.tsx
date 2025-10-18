@@ -17,16 +17,16 @@ export default function Home() {
   const router = useRouter()
 
   useEffect(() => {
-    // Subscribe to auth state changes
     const unsubscribe = onAuthStateChange((currentUser) => {
       setUser(currentUser)
       setLoading(false)
       if (!currentUser) {
         router.push('/login')
+      } else {
+        // Redirect authenticated users to the new home page
+        router.push('/home')
       }
     })
-
-    // Cleanup subscription on unmount
     return () => unsubscribe()
   }, [router])
 
