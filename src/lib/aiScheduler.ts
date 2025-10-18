@@ -9,7 +9,12 @@ export class AIScheduler {
     // This is where we'll integrate with Claude API
     // For now, let's create intelligent scheduling logic
     
-    const { tasks, availableHours, mood, energy } = input
+    const { tasks, startTime, endTime, mood, energy } = input
+    
+    // Calculate available hours from start and end time
+    const [startHour, startMinute] = startTime.split(':').map(Number)
+    const [endHour, endMinute] = endTime.split(':').map(Number)
+    const availableHours = (endHour + endMinute/60) - (startHour + startMinute/60)
     const totalMinutes = availableHours * 60
     const schedule: ScheduleItem[] = []
     
