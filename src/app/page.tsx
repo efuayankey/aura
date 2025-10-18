@@ -93,7 +93,7 @@ export default function HomePage() {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-hidden">
         <HeaderBar
-          userName="Grace"
+          userName="Vanessa"
           onStartPlan={handleStartPlan}
           onMenuClick={handleMenuClick}
         />
