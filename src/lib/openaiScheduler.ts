@@ -1,12 +1,23 @@
 import OpenAI from 'openai'
-import { UserInput, ScheduleItem, Task } from '@/types'
+import { UserInput, ScheduleItem } from '@/types'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+let openai: OpenAI | null = null
+
+// Only initialize OpenAI if API key is available
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  })
+}
 
 export class OpenAIScheduler {
   static async generateSchedule(input: UserInput): Promise<ScheduleItem[]> {
+    // Fallback to local scheduling if OpenAI is not configured
+    if (!openai) {
+      const { AIScheduler } = await import('./aiScheduler')
+      return AIScheduler.generateSchedule(input)
+    }
+
     try {
       const prompt = this.buildSchedulingPrompt(input)
       
@@ -151,6 +162,10 @@ Focus on creating a sustainable, balanced schedule that promotes both achievemen
     completedTasks: number,
     totalTasks: number
   ): Promise<string> {
+    if (!openai) {
+      return this.getFallbackWellnessMessage(mood, energy)
+    }
+
     try {
       const completion = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",

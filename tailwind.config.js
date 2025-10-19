@@ -8,18 +8,29 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Wellness-inspired color palette
+        // AURA color palette - emerald/teal theme
+        emerald: {
+          DEFAULT: '#007b55',
+          dark: '#005a3d',
+        },
+        teal: {
+          DEFAULT: '#00b377',
+          light: '#00e699',
+          dark: '#009960',
+        },
+        mint: {
+          light: '#e6fff5',
+          DEFAULT: '#f8fff9',
+        },
+        // Keep existing colors for compatibility
         serenity: {
-          50: '#f0f9ff',
-          100: '#e0f2fe', 
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
+          50: '#e6f7ff',
+          100: '#bae7ff',
+          200: '#91d5ff',
+          300: '#69c0ff',
+          400: '#40a9ff',
+          500: '#1890ff',
+          600: '#096dd9',
         },
         mindful: {
           50: '#ecfdf5',
@@ -29,30 +40,26 @@ module.exports = {
           400: '#34d399',
           500: '#10b981',
           600: '#059669',
-          700: '#047857',
-          800: '#065f46',
-          900: '#064e3b',
         },
         balance: {
-          50: '#fdf4ff',
-          100: '#fae8ff',
-          200: '#f5d0fe',
-          300: '#f0abfc',
-          400: '#e879f9',
-          500: '#d946ef',
-          600: '#c026d3',
-          700: '#a21caf',
-          800: '#86198f',
-          900: '#701a75',
-        }
+          50: '#fef5ff',
+          100: '#fce8ff',
+          200: '#f9d1ff',
+          300: '#f5baff',
+          400: '#f0a3ff',
+          500: '#eb8cff',
+          600: '#d946ef',
+        },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'Poppins', 'system-ui', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',
+        'slide-down': 'slideDown 0.3s ease-out',
         'pulse-gentle': 'pulseGentle 2s infinite',
+        'spin-slow': 'spin 3s linear infinite',
       },
       keyframes: {
         fadeIn: {
@@ -60,7 +67,11 @@ module.exports = {
           '100%': { opacity: '1' },
         },
         slideUp: {
-          '0%': { transform: 'translateY(10px)', opacity: '0' },
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        slideDown: {
+          '0%': { transform: 'translateY(-20px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
         pulseGentle: {

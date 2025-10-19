@@ -9,15 +9,22 @@ export class AIScheduler {
     // This is where we'll integrate with Claude API
     // For now, let's create intelligent scheduling logic
     
-    const { tasks, availableHours, mood, energy } = input
-    const totalMinutes = availableHours * 60
+    const { tasks, startTime, endTime, mood, energy } = input
+    
+    // Calculate available hours
+    const [startHour, startMin] = startTime.split(':').map(Number)
+    const [endHour, endMin] = endTime.split(':').map(Number)
+    const startMinutes = startHour * 60 + startMin
+    const endMinutes = endHour * 60 + endMin
+    const totalMinutes = endMinutes - startMinutes
+    
     const schedule: ScheduleItem[] = []
     
     // Sort tasks by priority and adjust for mood/energy
     const sortedTasks = this.prioritizeTasks(tasks, mood, energy)
     
     let currentTime = new Date()
-    currentTime.setHours(9, 0, 0, 0) // Start at 9 AM
+    currentTime.setHours(startHour, startMin, 0, 0)
     
     let remainingMinutes = totalMinutes
     let consecutiveWorkTime = 0
@@ -171,10 +178,11 @@ export class AIScheduler {
   }
 
   private static formatTime(date: Date): string {
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true 
-    })
+    const hours = date.getHours()
+    const minutes = date.getMinutes()
+    const ampm = hours >= 12 ? 'PM' : 'AM'
+    const displayHours = hours % 12 || 12
+    const displayMinutes = minutes.toString().padStart(2, '0')
+    return `${displayHours}:${displayMinutes} ${ampm}`
   }
 }
