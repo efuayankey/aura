@@ -4,13 +4,17 @@ export class BalanceCalculator {
   static calculateScore(
     schedule: ScheduleItem[], 
     userInput: UserInput,
-    completedTasks: string[] = []
+    completedTasks: string[] = [],
+    skippedTasks: string[] = [],
+    rescheduledTasks: string[] = []
   ): BalanceScore {
-    const productivity = this.calculateProductivity(schedule, completedTasks)
-    const wellness = this.calculateWellness(schedule, userInput)
-    const consistency = this.calculateConsistency(schedule)
-    
-    const overall = Math.round((productivity + wellness + consistency) / 3)
+    // New intuitive progress-based scoring system
+    const { overall, productivity, wellness, consistency } = this.calculateProgressScore(
+      schedule, 
+      completedTasks, 
+      skippedTasks, 
+      rescheduledTasks
+    )
     
     return {
       overall,
@@ -20,98 +24,78 @@ export class BalanceCalculator {
     }
   }
 
-  private static calculateProductivity(schedule: ScheduleItem[], completedTasks: string[]): number {
-    const workBlocks = schedule.filter(item => item.type === 'work')
-    const totalWorkTime = workBlocks.reduce((sum, block) => {
-      const start = new Date(`2000-01-01 ${block.startTime}`)
-      const end = new Date(`2000-01-01 ${block.endTime}`)
-      return sum + (end.getTime() - start.getTime()) / (1000 * 60) // minutes
-    }, 0)
-    
-    const completedWorkTime = workBlocks
-      .filter(block => completedTasks.includes(block.taskId))
-      .reduce((sum, block) => {
-        const start = new Date(`2000-01-01 ${block.startTime}`)
-        const end = new Date(`2000-01-01 ${block.endTime}`)
-        return sum + (end.getTime() - start.getTime()) / (1000 * 60)
-      }, 0)
-    
-    if (totalWorkTime === 0) return 0
-    
-    const completionRate = (completedWorkTime / totalWorkTime) * 100
-    
-    // Bonus points for good time distribution
-    const averageBlockTime = totalWorkTime / workBlocks.length
-    const idealBlockTime = 60 // 1 hour blocks are ideal
-    const timeDistributionScore = Math.max(0, 100 - Math.abs(averageBlockTime - idealBlockTime))
-    
-    return Math.round((completionRate * 0.7) + (timeDistributionScore * 0.3))
-  }
+  private static calculateProgressScore(
+    schedule: ScheduleItem[],
+    completedTasks: string[],
+    skippedTasks: string[],
+    rescheduledTasks: string[]
+  ) {
+    if (schedule.length === 0) {
+      return { overall: 0, productivity: 0, wellness: 0, consistency: 0 }
+    }
 
-  private static calculateWellness(schedule: ScheduleItem[], userInput: UserInput): number {
+    // Separate work tasks and wellness/break items
+    const workItems = schedule.filter(item => item.type === 'work')
+    const wellnessItems = schedule.filter(item => item.type === 'break' || item.type === 'wellness')
     const totalItems = schedule.length
-    const wellnessItems = schedule.filter(item => 
-      item.type === 'break' || item.type === 'wellness'
-    ).length
+
+    // Calculate base points per item (total = 100 points)
+    const workPoints = workItems.length > 0 ? 70 / workItems.length : 0 // 70% for work
+    const wellnessPoints = wellnessItems.length > 0 ? 30 / wellnessItems.length : 0 // 30% for wellness
+
+    let earnedPoints = 0
+    let productivityPoints = 0
+    let wellnessEarnedPoints = 0
+
+    // Award points for completed work tasks
+    workItems.forEach(item => {
+      const taskId = item.taskId || item.id
+      if (completedTasks.includes(taskId)) {
+        earnedPoints += workPoints
+        productivityPoints += workPoints
+      } else if (rescheduledTasks.includes(taskId)) {
+        // Partial credit for rescheduled tasks (50%)
+        earnedPoints += workPoints * 0.5
+        productivityPoints += workPoints * 0.5
+      } else if (skippedTasks.includes(taskId)) {
+        // No points for skipped tasks, but also deduct 5 points as penalty
+        earnedPoints -= 5
+      }
+    })
+
+    // Award points for completed wellness/break items
+    wellnessItems.forEach(item => {
+      const taskId = item.taskId || item.id
+      if (completedTasks.includes(taskId)) {
+        earnedPoints += wellnessPoints
+        wellnessEarnedPoints += wellnessPoints
+      } else if (rescheduledTasks.includes(taskId)) {
+        // Partial credit for rescheduled wellness
+        earnedPoints += wellnessPoints * 0.5
+        wellnessEarnedPoints += wellnessPoints * 0.5
+      }
+    })
+
+    // Calculate individual scores
+    const productivity = Math.max(0, Math.min(100, Math.round(
+      workItems.length > 0 ? (productivityPoints / (workPoints * workItems.length)) * 100 : 0
+    )))
     
-    const wellnessRatio = (wellnessItems / totalItems) * 100
-    
-    // Adjust based on user's energy and mood
-    let moodBonus = 0
-    switch (userInput.mood) {
-      case 'stressed':
-        moodBonus = wellnessRatio > 25 ? 20 : -10 // Need more breaks when stressed
-        break
-      case 'tired':
-        moodBonus = wellnessRatio > 30 ? 15 : -15 // Need even more breaks when tired
-        break
-      case 'energized':
-        moodBonus = wellnessRatio > 15 ? 10 : 0 // Can handle fewer breaks
-        break
-      case 'balanced':
-        moodBonus = wellnessRatio >= 20 && wellnessRatio <= 25 ? 10 : 0
-        break
-    }
-    
-    const energyAdjustment = userInput.energy <= 4 ? (wellnessRatio > 25 ? 15 : -20) : 0
-    
-    return Math.min(100, Math.max(0, Math.round(wellnessRatio * 2 + moodBonus + energyAdjustment)))
+    const wellness = Math.max(0, Math.min(100, Math.round(
+      wellnessItems.length > 0 ? (wellnessEarnedPoints / (wellnessPoints * wellnessItems.length)) * 100 : 0
+    )))
+
+    // Consistency based on completion pattern (fewer skips = higher consistency)
+    const totalActioned = completedTasks.length + skippedTasks.length + rescheduledTasks.length
+    const consistencyRatio = totalActioned > 0 ? (completedTasks.length + rescheduledTasks.length * 0.7) / totalActioned : 0
+    const consistency = Math.round(consistencyRatio * 100)
+
+    // Overall score is the total earned points, capped between 0-100
+    const overall = Math.max(0, Math.min(100, Math.round(earnedPoints)))
+
+    return { overall, productivity, wellness, consistency }
   }
 
-  private static calculateConsistency(schedule: ScheduleItem[]): number {
-    if (schedule.length < 2) return 100
-    
-    const workBlocks = schedule.filter(item => item.type === 'work')
-    if (workBlocks.length < 2) return 50
-    
-    // Calculate variance in work block durations
-    const durations = workBlocks.map(block => {
-      const start = new Date(`2000-01-01 ${block.startTime}`)
-      const end = new Date(`2000-01-01 ${block.endTime}`)
-      return (end.getTime() - start.getTime()) / (1000 * 60)
-    })
-    
-    const average = durations.reduce((sum, d) => sum + d, 0) / durations.length
-    const variance = durations.reduce((sum, d) => sum + Math.pow(d - average, 2), 0) / durations.length
-    const standardDeviation = Math.sqrt(variance)
-    
-    // Lower standard deviation = higher consistency
-    const consistencyScore = Math.max(0, 100 - (standardDeviation * 2))
-    
-    // Check for good break distribution
-    let breakDistributionScore = 100
-    for (let i = 1; i < schedule.length - 1; i++) {
-      if (schedule[i].type === 'work' && schedule[i-1].type === 'work') {
-        const prevEnd = new Date(`2000-01-01 ${schedule[i-1].endTime}`)
-        const currentStart = new Date(`2000-01-01 ${schedule[i].startTime}`)
-        const gap = (currentStart.getTime() - prevEnd.getTime()) / (1000 * 60)
-        
-        if (gap === 0) breakDistributionScore -= 10 // No break between work blocks
-      }
-    }
-    
-    return Math.round((consistencyScore * 0.6) + (breakDistributionScore * 0.4))
-  }
 
   static getScoreColor(score: number): string {
     if (score >= 80) return 'from-mindful-500 to-mindful-600'

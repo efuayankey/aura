@@ -26,10 +26,13 @@ export default function BalanceScore({ score, className = '' }: BalanceScoreProp
   }
 
   const CircularProgress = ({ value, color }: { value: number; color: string }) => {
+    // Ensure value is a valid number between 0 and 100
+    const safeValue = isNaN(value) ? 0 : Math.max(0, Math.min(100, value))
+    
     const radius = 40
     const circumference = 2 * Math.PI * radius
     const strokeDasharray = circumference
-    const strokeDashoffset = circumference - (value / 100) * circumference
+    const strokeDashoffset = circumference - (safeValue / 100) * circumference
 
     return (
       <div className="relative w-24 h-24">
@@ -63,7 +66,7 @@ export default function BalanceScore({ score, className = '' }: BalanceScoreProp
           </defs>
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-lg font-bold text-gray-700">{value}</span>
+          <span className="text-lg font-bold text-gray-700">{safeValue}</span>
         </div>
       </div>
     )
@@ -86,7 +89,7 @@ export default function BalanceScore({ score, className = '' }: BalanceScoreProp
           </div>
         </div>
         <div className={`text-4xl font-bold bg-gradient-to-r ${getScoreColor(score.overall)} bg-clip-text text-transparent mb-2`}>
-          {score.overall}
+          {isNaN(score.overall) ? 0 : Math.round(score.overall)}
         </div>
         <p className="text-sm text-gray-600 max-w-xs mx-auto">
           {getScoreMessage(score.overall)}
@@ -106,11 +109,11 @@ export default function BalanceScore({ score, className = '' }: BalanceScoreProp
             <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
               <div 
                 className={`h-full bg-gradient-to-r ${getScoreColor(score.productivity)} transition-all duration-1000`}
-                style={{ width: `${score.productivity}%` }}
+                style={{ width: `${isNaN(score.productivity) ? 0 : Math.max(0, Math.min(100, score.productivity))}%` }}
               />
             </div>
             <span className="text-sm font-semibold text-gray-600 min-w-[2rem]">
-              {score.productivity}
+              {isNaN(score.productivity) ? 0 : Math.round(score.productivity)}
             </span>
           </div>
         </div>
@@ -126,11 +129,11 @@ export default function BalanceScore({ score, className = '' }: BalanceScoreProp
             <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
               <div 
                 className={`h-full bg-gradient-to-r ${getScoreColor(score.wellness)} transition-all duration-1000`}
-                style={{ width: `${score.wellness}%` }}
+                style={{ width: `${isNaN(score.wellness) ? 0 : Math.max(0, Math.min(100, score.wellness))}%` }}
               />
             </div>
             <span className="text-sm font-semibold text-gray-600 min-w-[2rem]">
-              {score.wellness}
+              {isNaN(score.wellness) ? 0 : Math.round(score.wellness)}
             </span>
           </div>
         </div>
@@ -146,11 +149,11 @@ export default function BalanceScore({ score, className = '' }: BalanceScoreProp
             <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
               <div 
                 className={`h-full bg-gradient-to-r ${getScoreColor(score.consistency)} transition-all duration-1000`}
-                style={{ width: `${score.consistency}%` }}
+                style={{ width: `${isNaN(score.consistency) ? 0 : Math.max(0, Math.min(100, score.consistency))}%` }}
               />
             </div>
             <span className="text-sm font-semibold text-gray-600 min-w-[2rem]">
-              {score.consistency}
+              {isNaN(score.consistency) ? 0 : Math.round(score.consistency)}
             </span>
           </div>
         </div>

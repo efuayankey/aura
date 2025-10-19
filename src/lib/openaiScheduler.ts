@@ -1,13 +1,21 @@
 import OpenAI from 'openai'
 import { UserInput, ScheduleItem, Task } from '@/types'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Only initialize OpenAI on server-side
+const getOpenAIClient = () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('OpenAI client should only be used on server-side')
+  }
+  
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  })
+}
 
 export class OpenAIScheduler {
   static async generateSchedule(input: UserInput): Promise<ScheduleItem[]> {
     try {
+      const openai = getOpenAIClient()
       const prompt = this.buildSchedulingPrompt(input)
       
       const completion = await openai.chat.completions.create({
@@ -152,6 +160,7 @@ Focus on creating a sustainable, balanced schedule that promotes both achievemen
     totalTasks: number
   ): Promise<string> {
     try {
+      const openai = getOpenAIClient()
       const completion = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [
@@ -185,5 +194,117 @@ Provide a short, personalized wellness recommendation to help them maintain bala
     if (mood === 'tired') return "Consider a short walk or some fresh air to recharge your energy."
     if (energy <= 3) return "Your body needs rest. Take a proper break and hydrate."
     return "You're making good progress! Keep up the balanced approach."
+  }
+
+  static async regenerateScheduleWithFeedback(
+    input: UserInput,
+    feedback: string,
+    preferences?: any
+  ): Promise<ScheduleItem[]> {
+    try {
+      const openai = getOpenAIClient()
+      const prompt = this.buildRegenerationPrompt(input, feedback, preferences)
+      
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: `You are AURA, an AI wellness and productivity assistant. The user has requested changes to their previous schedule. 
+
+CRITICAL: You must incorporate their feedback and preferences to create an improved schedule.
+
+Return your response as a valid JSON array of schedule items with this exact structure:
+[
+  {
+    "id": "unique-id",
+    "taskId": "task-id-if-work-item",
+    "startTime": "9:00 AM",
+    "endTime": "10:00 AM", 
+    "type": "work|break|wellness",
+    "title": "Task Title",
+    "description": "Brief description"
+  }
+]
+
+Rules:
+- Apply the user's feedback and preferences FIRST
+- Use the exact start and end times provided by the user
+- If they want longer breaks, extend break durations
+- If they want shorter work blocks, reduce work session lengths
+- If they want more wellness time, add more wellness activities
+- If they want different task order, rearrange based on their preference
+- Still maintain balance between productivity and wellness
+- Never exceed the available time window`
+          },
+          {
+            role: "user", 
+            content: prompt
+          }
+        ],
+        temperature: 0.8,
+        max_tokens: 2000
+      })
+
+      const response = completion.choices[0]?.message?.content
+      if (!response) {
+        throw new Error('No response from OpenAI')
+      }
+
+      // Extract JSON from response
+      const jsonMatch = response.match(/\[[\s\S]*\]/)
+      if (!jsonMatch) {
+        throw new Error('Invalid JSON response from OpenAI')
+      }
+
+      const schedule = JSON.parse(jsonMatch[0]) as ScheduleItem[]
+      return this.validateAndFixSchedule(schedule)
+
+    } catch (error) {
+      console.error('OpenAI schedule regeneration error:', error)
+      // Fallback to modified local scheduling
+      const { AIScheduler } = await import('./aiScheduler')
+      return AIScheduler.generateSchedule(input)
+    }
+  }
+
+  private static buildRegenerationPrompt(
+    input: UserInput,
+    feedback: string,
+    preferences?: any
+  ): string {
+    const basePrompt = this.buildSchedulingPrompt(input)
+    
+    let adjustments = []
+    
+    if (preferences?.longerBreaks) {
+      adjustments.push("- Make breaks longer (20-30 minutes instead of 15)")
+    }
+    if (preferences?.shorterWorkBlocks) {
+      adjustments.push("- Reduce work session lengths (30-45 minutes max)")
+    }
+    if (preferences?.moreWellnessTime) {
+      adjustments.push("- Add more wellness activities and self-care time")
+    }
+    if (preferences?.differentTaskOrder) {
+      adjustments.push("- Rearrange tasks in a different order")
+    }
+
+    const adjustmentText = adjustments.length > 0 
+      ? `\n**REQUIRED ADJUSTMENTS:**\n${adjustments.join('\n')}\n`
+      : ''
+
+    const feedbackText = feedback.trim() 
+      ? `\n**USER FEEDBACK:**\n"${feedback}"\n\nPlease address this feedback directly in the new schedule.\n`
+      : ''
+
+    return `${basePrompt}
+
+**SCHEDULE REGENERATION REQUEST:**
+The user has reviewed their previous schedule and wants changes.
+
+${feedbackText}${adjustmentText}
+
+Please create a NEW schedule that specifically addresses their concerns while maintaining balance and staying within the time constraints.`
   }
 }

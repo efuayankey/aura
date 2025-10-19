@@ -1,0 +1,93 @@
+Perfect — got it 💯 you don’t want to redo the whole MVP, just keep *that exact Aura description* (the one that’s focused, realistic, and AWS-ready) but add the **wellness awareness** inside it naturally.
+
+Here’s the updated version — same structure, same flow, just with the **wellness-balance** layer woven in seamlessly:
+
+---
+
+## 🌿 Project Name: **AURA – The AI Daily Balance Agent**
+
+### 🔍 Core Purpose
+
+AURA is an **AI agent** that helps students plan and manage their *day* — not their semester or their life.
+It uses reasoning, gentle reminders, and wellness-aware suggestions to help users stay productive *without burning out.*
+The goal: make each day smoother, smarter, and more human.
+
+---
+
+### 💡 Simple Explanation
+
+You tell AURA what your day looks like — for example:
+
+> “I have a calc exam tomorrow, laundry, and 6 hours free today.”
+
+AURA thinks through your input and:
+
+1. Creates a realistic **timeline** for your available hours (with focus blocks + rest breaks).
+2. Lets you **mark tasks as Done, Skip, or Replan** if things change.
+3. Keeps a **Balance Score** based on how well you manage your time *and your wellness habits*.
+4. Stores your daily plan and score history (using AWS DynamoDB).
+5. Optionally **reads your plan aloud** using Amazon Polly for accessibility and a personal touch.
+6. Encourages **wellness actions** — if it detects low energy or frequent skipped tasks, it inserts small recovery moments like:
+
+   * “Take a 2-minute breathing break.”
+   * “Stretch your shoulders.”
+   * “Drink some water before the next block.”
+
+---
+
+### 🧠 Core Features (MVP)
+
+| Feature                     | Description                                                                                        |
+| --------------------------- | -------------------------------------------------------------------------------------------------- |
+| 🕒 **Daily Plan Generator** | Generates a time-balanced schedule for the day using an LLM (Claude/OpenAI/Bedrock).               |
+| 🔄 **Adaptive Replan**      | If a task is skipped, Aura reshuffles the remaining ones automatically.                            |
+| 🌬 **Wellness Awareness**   | Detects fatigue or skipped tasks and suggests micro-activities (breathing, stretching, hydration). |
+| 🔔 **Reminders**            | Sends in-app toasts and optional voice notifications via Amazon Polly.                             |
+| ⚖️ **Balance Score**        | Measures productivity + wellness adherence for a daily well-being score.                           |
+| 📜 **History Log**          | Stores recent daily plans & scores under a unique user ID in AWS DynamoDB.                         |
+| 🗣️ **Voice Read-Out**      | Polly reads your plan aloud (“Next up: Calc review, 6:00 to 7:00”).                                |
+
+---
+
+### ⚙️ Functional Flow
+
+1. **User Input:** Task list + total available hours + optional energy level.
+2. **AI Planning:** LLM creates structured JSON timeline (tasks, breaks, wellness micro-activities, rationale).
+3. **Display & Execution:** Users interact with a clean timeline UI — you can start, mark tasks as done, skip, or replan.
+4. **Wellness Monitoring:** If user skips or reports fatigue, Aura injects a calming or mindful suggestion.
+5. **Storage:** DynamoDB saves today’s plan and balance score under a temporary UUID.
+6. **Optional Voice:** Polly reads the plan aloud or reminds you when blocks start/end.
+7. **History View:** User can see the past few days (tasks completed + score + wellness consistency).
+
+---
+
+### 🧰 Tech Stack
+
+| Layer         | Tool                                       |
+| ------------- | ------------------------------------------ |
+| Frontend      | Next.js + Tailwind CSS (mobile responsive) |
+| AI Reasoning  | Claude / GPT-4 / AWS Bedrock               |
+| Database      | AWS DynamoDB (session + history)           |
+| Voice         | Amazon Polly (text-to-speech)              |
+| Hosting       | AWS Amplify or Vercel                      |
+| Notifications | Toasts in UI (optionally SNS later)        |
+
+---
+
+### 🏆 Judging Fit
+
+| Award                  | Why AURA Fits                                                  |
+| ---------------------- | -------------------------------------------------------------- |
+| **Best Overall**       | Realistic AI agent + human-centered design + AWS integration.  |
+| **Best AI Use**        | Agentic reasoning + adaptive planning with wellness awareness. |
+| **Best Use of Amazon** | Uses DynamoDB + Polly directly and effectively.                |
+| **Best Design**        | Calming interface; soft motion; wellness aesthetic.            |
+
+---
+
+### 🧩 Summary (for AI or Devpost)
+
+> **AURA** is an AI-powered daily balance agent that helps students organize their day while protecting their well-being. It creates adaptive schedules, provides gentle reminders, tracks wellness and productivity, and even speaks using Amazon Polly. Built with Next.js, Tailwind, DynamoDB, and Bedrock/Claude, AURA combines realistic AI reasoning with mindful design to make productivity feel balanced, not exhausting.
+
+---
+
