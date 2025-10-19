@@ -23,7 +23,7 @@ Unlike generic planners or Pomodoro apps, AURA uses **AI reasoning** to understa
 ## How It Works
 
 1. **Smart Input**: Tell AURA your tasks, time window, mood, and energy level
-2. **AI Reasoning**: GPT-4 analyzes your context and creates an optimized schedule
+2. **AI Reasoning**: Bedrock (Claude) analyzes your context and creates an optimized schedule
 3. **Balanced Planning**: Automatically includes appropriate breaks and wellness activities
 4. **Live Tracking**: Check off tasks and watch your Balance Score update in real-time
 5. **Adaptive Coaching**: Get personalized recommendations based on your progress
@@ -32,10 +32,9 @@ Unlike generic planners or Pomodoro apps, AURA uses **AI reasoning** to understa
 
 - **Frontend**: Next.js 15 + React + TypeScript
 - **Styling**: Tailwind CSS + Custom animations
-- **AI Integration**: OpenAI GPT-4 API
 - **Icons**: Lucide React
 - **Deployment**: AWS Amplify
-- **Future Enhancements**: AWS Bedrock, DynamoDB, Amazon Polly
+- **AWS resources**: AWS Bedrock, DynamoDB, Amazon Polly, SNS
 
 ## Quick Start
 
@@ -53,7 +52,7 @@ Unlike generic planners or Pomodoro apps, AURA uses **AI reasoning** to understa
 3. **Set up environment variables**
    ```bash
    cp .env.local.example .env.local
-   # Add your OpenAI API key
+   # Add your AWS API key
    ```
 
 4. **Run the development server**
